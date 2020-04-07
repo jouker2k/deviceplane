@@ -114,21 +114,23 @@ const DeviceServices = ({ projectId, device, applicationStatusInfo }) => {
 
   const columns = useMemo(() => {
     const cols = [];
-    cols.push({
-      Header: 'Service',
-      accessor: ({ application, service }) =>
-        `${application.name} / ${service}`,
-      Cell: ({ cell: { value }, row: { original } }) => (
-        <Link href={`/${projectId}/applications/${original.application.name}`}>
-          {value}
-        </Link>
-      ),
-    });
     if (
       applicationStatusInfo.length &&
       applicationStatusInfo[0].serviceStates &&
       applicationStatusInfo[0].serviceStates.length
     ) {
+      cols.push({
+        Header: 'Service',
+        accessor: ({ application, service }) =>
+          `${application.name} / ${service}`,
+        Cell: ({ cell: { value }, row: { original } }) => (
+          <Link
+            href={`/${projectId}/applications/${original.application.name}`}
+          >
+            {value}
+          </Link>
+        ),
+      });
       cols.push({
         Header: 'State',
         accessor: 'state',
