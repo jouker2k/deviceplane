@@ -10,7 +10,9 @@ import (
 )
 
 var (
-	sshTimeoutFlag *int = &[]int{0}[0]
+	sshTimeoutFlag  *int    = &[]int{0}[0]
+	sshTcpProxyPort *int    = &[]int{0}[0]
+	sshArgumentsArg *string = &[]string{""}[0]
 
 	deviceArg *string = &[]string{""}[0]
 
@@ -40,6 +42,8 @@ func Initialize(c *global.Config) {
 		deviceSSHCmd := attachmentPoint.Command("ssh", "SSH into a device.")
 		addDeviceArg(deviceSSHCmd)
 		deviceSSHCmd.Flag("timeout", "Maximum length to attempt establishing a connection.").Default("60").IntVar(sshTimeoutFlag)
+		deviceSSHCmd.Flag("port", "If set, instead of enabling an interactive SSH session, proxies the TCP connection to the given port.").Default("0").IntVar(sshTcpProxyPort)
+		deviceSSHCmd.Arg("ssh-arguments", "SSH arguments, e.g. 'echo $USER' or 'ls'.").StringVar(sshArgumentsArg)
 		deviceSSHCmd.Action(deviceSSHAction)
 	})
 

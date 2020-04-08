@@ -90,7 +90,7 @@ func deviceSSHAction(c *kingpin.ParseContext) error {
 		return err
 	}
 
-	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	listener, err := net.Listen("tcp", "127.0.0.1:"+fmt.Sprintf("%d", *sshTcpProxyPort))
 	if err != nil {
 		return err
 	}
@@ -110,40 +110,42 @@ func deviceSSHAction(c *kingpin.ParseContext) error {
 		return nil
 	})
 
-	g.Go(func() error {
-		defer conn.Close()
+	if *sshTcpProxyPort == 0 {
+		g.Go(func() error {
+			defer conn.Close()
 
-		port := strconv.Itoa(listener.Addr().(*net.TCPAddr).Port)
+			port := strconv.Itoa(listener.Addr().(*net.TCPAddr).Port)
 
-		_, postSSH := cliutils.GetSSHArgs(os.Args[1:])
-		sshArguments := append([]string{
-			"-p", port,
-			"-o",
-			"NoHostAuthenticationForLocalhost yes",
-			"127.0.0.1",
-			"-o",
-			fmt.Sprintf("ConnectTimeout=%d", *sshTimeoutFlag),
-		}, postSSH...)
+			sshArguments := append([]string{
+				"-p", port,
+				"-o",
+				"NoHostAuthenticationForLocalhost yes",
+				"127.0.0.1",
+				"-o",
+				fmt.Sprintf("ConnectTimeout=%d", *sshTimeoutFlag),
+			}, strings.Split(*sshArgumentsArg, " ")...)
 
-		cmd := exec.CommandContext(
-			ctx,
-			"ssh",
-			sshArguments...,
-		)
-		cmd.Stdin = os.Stdin
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
+			cmd := exec.CommandContext(
+				ctx,
+				"ssh",
+				sshArguments...,
+			)
+			cmd.Stdin = os.Stdin
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
 
-		if err := cmd.Run(); err != nil {
-			if exitError, ok := err.(*exec.ExitError); ok {
-				os.Exit(exitError.ExitCode())
-				return nil
+			if err := cmd.Run(); err != nil {
+				if exitError, ok := err.(*exec.ExitError); ok {
+					os.Exit(exitError.ExitCode())
+					return nil
+				}
+				return err
 			}
-			return err
-		}
 
-		return nil
-	})
+			return nil
+		})
+
+	}
 
 	return g.Wait()
 }
